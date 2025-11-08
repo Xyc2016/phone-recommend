@@ -3,13 +3,13 @@ import { Layout } from 'antd';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import { useThreads } from './hooks/useThreads';
-import { Thread, Message } from './types';
+import { Thread } from './types';
 import { getThread } from './services/api';
 
 const { Sider, Content } = Layout;
 
 function App() {
-  const { threads, addThread, removeThread, refreshThreads } = useThreads();
+  const { threads, addThread, removeThread, renameThread, refreshThreads } = useThreads();
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [currentThread, setCurrentThread] = useState<Thread | null>(null);
 
@@ -62,6 +62,25 @@ function App() {
     }
   };
 
+  const handleRenameThread = async (threadId: string, newTitle: string) => {
+    try {
+      const updated = await renameThread(threadId, newTitle);
+      if (currentThreadId === threadId) {
+        setCurrentThread((prev) =>
+          prev
+            ? {
+                ...prev,
+                title: updated.title,
+                updatedAt: updated.updatedAt,
+              }
+            : prev
+        );
+      }
+    } catch (error) {
+      console.error('Failed to rename thread:', error);
+    }
+  };
+
   return (
     <Layout className="h-screen">
       <Sider width={320} className="h-screen" theme="light">
@@ -71,6 +90,7 @@ function App() {
           onThreadSelect={handleThreadSelect}
           onNewThread={handleNewThread}
           onDeleteThread={handleDeleteThread}
+          onRenameThread={handleRenameThread}
         />
       </Sider>
       <Content className="h-screen">

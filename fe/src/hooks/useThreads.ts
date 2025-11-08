@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Thread } from '../types';
-import { getThreads, createThread, deleteThread } from '../services/api';
+import { getThreads, createThread, deleteThread, renameThread as renameThreadRequest } from '../services/api';
 
 export const useThreads = () => {
   const [threads, setThreads] = useState<Thread[]>([]);
@@ -42,11 +42,31 @@ export const useThreads = () => {
     }
   }, []);
 
+  const renameThread = useCallback(async (id: string, title: string) => {
+    try {
+      const updated = await renameThreadRequest(id, title);
+      setThreads((prev) => {
+        const next = prev.map((thread) =>
+          thread.id === id
+            ? { ...thread, title: updated.title, updatedAt: updated.updatedAt }
+            : thread
+        );
+        next.sort((a, b) => b.updatedAt - a.updatedAt);
+        return next;
+      });
+      return updated;
+    } catch (error) {
+      console.error('Failed to rename thread:', error);
+      throw error;
+    }
+  }, []);
+
   return {
     threads,
     loading,
     addThread,
     removeThread,
+    renameThread,
     refreshThreads: loadThreads,
   };
 };

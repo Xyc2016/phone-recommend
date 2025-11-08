@@ -69,6 +69,33 @@ export const deleteThread = async (id: string): Promise<void> => {
   }
 };
 
+// 重命名对话线程
+export const renameThread = async (id: string, title: string): Promise<Thread> => {
+  const response = await fetch(`${API_BASE_URL}/api/threads/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ title }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to rename thread');
+  }
+
+  const thread = await response.json();
+
+  return {
+    ...thread,
+    messages: (thread.messages || []).map((msg: any) => ({
+      ...msg,
+      timestamp: new Date(msg.created_at).getTime(),
+    })),
+    createdAt: new Date(thread.created_at).getTime(),
+    updatedAt: new Date(thread.updated_at).getTime(),
+  };
+};
+
 // 发送消息（SSE 流式响应）
 export const sendMessage = async (
   threadId: string,
@@ -101,7 +128,7 @@ export const sendMessage = async (
 
     while (true) {
       const { done, value } = await reader.read();
-      
+
       if (done) {
         break;
       }

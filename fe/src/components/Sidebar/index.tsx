@@ -16,6 +16,7 @@ interface SidebarProps {
   onThreadSelect: (threadId: string) => void;
   onNewThread: () => void;
   onDeleteThread: (threadId: string) => void;
+  onRenameThread: (threadId: string, newTitle: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -24,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onThreadSelect,
   onNewThread,
   onDeleteThread,
+  onRenameThread,
 }) => {
   // 按日期分组
   const groupThreadsByDate = (threads: Thread[]) => {
@@ -52,12 +54,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const groups = groupThreadsByDate(threads);
 
-  const getMenuItems = (threadId: string): MenuProps['items'] => [
+  const handleRename = (thread: Thread) => {
+    const newTitle = window.prompt('请输入新的对话名称', thread.title);
+    if (newTitle === null) {
+      return;
+    }
+    const trimmed = newTitle.trim();
+    if (!trimmed || trimmed === thread.title) {
+      return;
+    }
+    onRenameThread(thread.id, trimmed);
+  };
+
+  const getMenuItems = (thread: Thread): MenuProps['items'] => [
+    {
+      key: 'rename',
+      label: '重命名',
+      onClick: ({ domEvent }) => {
+        domEvent.stopPropagation();
+        handleRename(thread);
+      },
+    },
     {
       key: 'delete',
       label: '删除',
       danger: true,
-      onClick: () => onDeleteThread(threadId),
+      onClick: ({ domEvent }) => {
+        domEvent.stopPropagation();
+        onDeleteThread(thread.id);
+      },
     },
   ];
 
@@ -114,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       )}
                     </div>
                     <Dropdown
-                      menu={{ items: getMenuItems(thread.id) }}
+                      menu={{ items: getMenuItems(thread) }}
                       trigger={['click']}
                       onClick={(e) => e.stopPropagation()}
                     >
