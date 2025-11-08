@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Empty, Input, Button, Avatar } from 'antd';
+import { Empty, Input, Button, message as antdMessage } from 'antd';
 import { SendOutlined, AudioOutlined, MobileOutlined } from '@ant-design/icons';
 import { Thread, Message } from '../../types';
-import { sendMessage, createThread } from '../../services/mockService';
+import { sendMessage, createThread } from '../../services/api';
 import { ChatItem } from '../ChatItem';
 
 const { TextArea } = Input;
@@ -16,12 +16,13 @@ interface ChatAreaProps {
 export const ChatArea: React.FC<ChatAreaProps> = ({ thread, onMessageSent, onThreadCreated }) => {
   const [inputValue, setInputValue] = useState('');
   const [sending, setSending] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollToBottom();
-  }, [thread?.messages]);
+  }, [thread?.messages, streamingMessage]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -43,12 +44,51 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ thread, onMessageSent, onThr
         onThreadCreated?.(currentThread);
       }
 
-      const assistantMessage = await sendMessage(currentThread.id, content);
-      onMessageSent(assistantMessage);
+      // 创建流式消息占位符
+      const tempAssistantMessage: Message = {
+        id: `temp-${Date.now()}`,
+        role: 'assistant',
+        content: '',
+        timestamp: Date.now(),
+      };
+      setStreamingMessage(tempAssistantMessage);
+
+      // 发送消息并接收 SSE 流式响应
+      let fullContent = '';
+      await sendMessage(
+        currentThread.id,
+        content,
+        (chunk: string) => {
+          // 接收流式数据块
+          fullContent += chunk;
+          setStreamingMessage({
+            ...tempAssistantMessage,
+            content: fullContent,
+          });
+        },
+        () => {
+          // 流式响应完成
+          setStreamingMessage(null);
+          setSending(false);
+          // 刷新线程以获取最新消息
+          onMessageSent({
+            ...tempAssistantMessage,
+            content: fullContent,
+          });
+        },
+        (error: Error) => {
+          // 错误处理
+          setStreamingMessage(null);
+          setSending(false);
+          antdMessage.error(`发送失败: ${error.message}`);
+          console.error('Failed to send message:', error);
+        }
+      );
     } catch (error) {
-      console.error('Failed to send message:', error);
-    } finally {
+      setStreamingMessage(null);
       setSending(false);
+      antdMessage.error('发送失败，请稍后重试');
+      console.error('Failed to send message:', error);
     }
   };
 
@@ -125,6 +165,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ thread, onMessageSent, onThr
         {thread.messages.map((message) => (
           <ChatItem key={message.id} message={message} />
         ))}
+        {streamingMessage && (
+          <ChatItem key={streamingMessage.id} message={streamingMessage} />
+        )}
         <div ref={messagesEndRef} />
       </div>
 

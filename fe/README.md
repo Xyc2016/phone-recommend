@@ -2,12 +2,11 @@
 
 ## 技术栈
 
-- **React 18** - UI框架
+- **React 19** - UI 框架
 - **TypeScript** - 类型安全
 - **rsbuild** - 构建工具
-- **Ant Design** - UI组件库
-- **Ant Design X** - AI组件库
-- **Tailwind CSS** - 样式工具
+- **Ant Design** - UI 组件库
+- **Tailwind CSS + SASS** - 样式系统
 - **dayjs** - 日期处理
 
 ## 项目结构
@@ -16,79 +15,77 @@
 fe/
 ├── src/
 │   ├── components/       # 组件
-│   │   ├── Sidebar/     # 左侧边栏
-│   │   ├── ChatArea/    # 聊天区域
-│   │   └── ChatItem/    # 消息项
-│   ├── hooks/           # 自定义Hooks
+│   │   ├── Sidebar/      # 左侧边栏
+│   │   ├── ChatArea/     # 聊天区域
+│   │   └── ChatItem/     # 消息项
+│   ├── hooks/            # 自定义 Hooks
 │   │   └── useThreads.ts
-│   ├── services/        # 服务层
-│   │   └── mockService.ts  # Mock数据服务
-│   ├── types/           # 类型定义
-│   │   └── index.ts
-│   ├── App.tsx          # 主应用组件
-│   ├── index.tsx        # 入口文件
-│   └── index.css        # 全局样式
+│   ├── services/         # 服务层
+│   │   └── api.ts        # 后端 API 封装（SSE 支持）
+│   ├── styles/           # SASS 变量等
+│   ├── types/            # 类型定义
+│   ├── App.tsx           # 主应用组件
+│   ├── index.tsx         # 入口文件
+│   └── index.scss        # 全局样式
 ├── package.json
 ├── tsconfig.json
 ├── rsbuild.config.ts
-└── tailwind.config.js
+├── tailwind.config.js
+└── .env.example
 ```
 
 ## 功能特性
 
-- ✅ 多对话线程管理
-- ✅ 对话列表（按日期分组：今天、昨天、更早）
-- ✅ 新建对话
-- ✅ 删除对话
-- ✅ 消息发送和接收（Mock）
-- ✅ 空状态展示
-- ✅ 响应式布局
+- ✅ 多对话线程管理（创建、删除、切换）
+- ✅ 对话列表按日期分组（今天、昨天、更早）
+- ✅ 空状态与快速入口
+- ✅ 与后端 API 对接（FastAPI + MongoDB）
+- ✅ SSE 流式 AI 响应，实时渲染
+- ✅ Tailwind + SASS 样式体系
 
 ## 安装依赖
 
 ```bash
 cd fe
-npm install
+pnpm install
+```
+
+## 环境变量
+
+复制 `.env.example` 为 `.env`，根据实际情况调整：
+
+```bash
+cp .env.example .env
+# 例如：VITE_API_BASE_URL=http://localhost:8000
 ```
 
 ## 开发运行
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
-应用将在 `http://localhost:3000` 启动
+应用将在 `http://localhost:3000` 启动。
 
 ## 构建
 
 ```bash
-npm run build
+pnpm run build
 ```
 
-构建产物将输出到 `dist/` 目录
+构建产物输出到 `dist/` 目录。
 
 ## 预览构建结果
 
 ```bash
-npm run preview
+pnpm run preview
 ```
-
-## Mock数据
-
-当前使用Mock服务模拟AI响应，支持以下场景：
-
-- 性价比/便宜手机推荐
-- 5000元/旗舰手机推荐
-- 拍照/相机需求
-- 游戏/性能需求
-- 通用咨询
 
 ## 下一步
 
-- [ ] 连接后端API
 - [ ] 用户认证
-- [ ] 消息历史持久化
+- [ ] 消息历史搜索
 - [ ] 语音输入
 - [ ] 图片上传
-- [ ] 消息搜索
+- [ ] 主题 / 外观自定义
 

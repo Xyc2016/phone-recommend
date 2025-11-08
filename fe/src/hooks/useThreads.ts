@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Thread } from '../types';
-import { getThreads, createThread, deleteThread } from '../services/mockService';
+import { getThreads, createThread, deleteThread } from '../services/api';
 
 export const useThreads = () => {
   const [threads, setThreads] = useState<Thread[]>([]);

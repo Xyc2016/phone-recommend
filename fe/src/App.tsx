@@ -4,7 +4,7 @@ import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import { useThreads } from './hooks/useThreads';
 import { Thread, Message } from './types';
-import { getThread } from './services/mockService';
+import { getThread } from './services/api';
 
 const { Sider, Content } = Layout;
 
