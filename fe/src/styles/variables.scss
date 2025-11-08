@@ -1,0 +1,18 @@
+// SASS 变量示例
+$primary-color: #1890ff;
+$secondary-color: #722ed1;
+$text-color: #333333;
+$border-color: #d9d9d9;
+
+// SASS Mixin 示例
+@mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin text-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
