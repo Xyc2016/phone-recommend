@@ -4,9 +4,10 @@ from typing import List, Optional, AsyncIterator
 from bson import ObjectId
 from datetime import datetime
 from fastapi import HTTPException
+from pymongo import ReturnDocument
 
 from app.database import get_threads_collection
-from app.models.thread import Thread, ThreadCreate
+from app.models.thread import Thread, ThreadCreate, ThreadUpdate
 from app.models.message import Message, MessageCreate
 from app.services.llm_service import llm_service
 
@@ -91,6 +92,57 @@ class ChatService:
 
         logger.debug("Fetched %d threads", len(threads))
         return threads
+
+    @staticmethod
+    async def update_thread(thread_id: str, update_data: ThreadUpdate) -> Thread:
+        """更新对话线程"""
+        threads_collection = get_threads_collection()
+
+        update_payload = {}
+
+        if update_data.title is not None:
+            new_title = update_data.title.strip()
+            if not new_title:
+                logger.warning("Attempted to update thread %s with empty title", thread_id)
+                raise HTTPException(status_code=400, detail="Title cannot be empty")
+            update_payload["title"] = new_title
+
+        if not update_payload:
+            logger.warning("No update fields provided for thread %s", thread_id)
+            raise HTTPException(status_code=400, detail="No update fields provided")
+
+        update_payload["updated_at"] = datetime.utcnow()
+
+        updated_thread = await threads_collection.find_one_and_update(
+            {"_id": ObjectId(thread_id)},
+            {"$set": update_payload},
+            return_document=ReturnDocument.AFTER,
+        )
+
+        if not updated_thread:
+            logger.warning("Thread %s not found when updating", thread_id)
+            raise HTTPException(status_code=404, detail="Thread not found")
+
+        messages = [
+            Message(
+                id=str(msg.get("_id", "")),
+                thread_id=thread_id,
+                role=msg["role"],
+                content=msg["content"],
+                created_at=msg["created_at"],
+            )
+            for msg in updated_thread.get("messages", [])
+        ]
+
+        logger.info("Updated thread %s", thread_id)
+
+        return Thread(
+            id=str(updated_thread["_id"]),
+            title=updated_thread["title"],
+            created_at=updated_thread["created_at"],
+            updated_at=updated_thread["updated_at"],
+            messages=messages,
+        )
 
     @staticmethod
     async def delete_thread(thread_id: str) -> bool:

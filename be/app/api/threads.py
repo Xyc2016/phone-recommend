@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from app.models.thread import Thread, ThreadCreate
+from app.models.thread import Thread, ThreadCreate, ThreadUpdate
 from app.services.chat_service import chat_service
 from typing import List
 
@@ -16,6 +16,12 @@ async def list_threads(skip: int = 0, limit: int = 100):
 async def create_thread(thread_data: ThreadCreate):
     """创建新对话线程"""
     return await chat_service.create_thread(thread_data)
+
+
+@router.patch("/{thread_id}", response_model=Thread)
+async def update_thread(thread_id: str, thread_data: ThreadUpdate):
+    """更新对话线程"""
+    return await chat_service.update_thread(thread_id, thread_data)
 
 
 @router.get("/{thread_id}", response_model=Thread)
