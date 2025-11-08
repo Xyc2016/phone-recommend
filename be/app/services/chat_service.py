@@ -1,15 +1,16 @@
 import logging
-from typing import List, Optional, AsyncIterator
+from typing import AsyncIterator, List, Optional
 
 from bson import ObjectId
-from datetime import datetime
 from fastapi import HTTPException
+from langchain.messages import AIMessage, ToolMessage
 from pymongo import ReturnDocument
 
 from app.database import get_threads_collection
-from app.models.thread import Thread, ThreadCreate, ThreadUpdate
 from app.models.message import Message, MessageCreate
+from app.models.thread import Thread, ThreadCreate, ThreadUpdate
 from app.services.llm_service import llm_service
+from app.utils.datetime import now
 
 logger = logging.getLogger("app.chat_service")
 
@@ -24,8 +25,8 @@ class ChatService:
 
         thread_doc = {
             "title": thread_data.title or "新对话",
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
+            "created_at": now(),
+            "updated_at": now(),
             "messages": [],
         }
 
@@ -111,7 +112,7 @@ class ChatService:
             logger.warning("No update fields provided for thread %s", thread_id)
             raise HTTPException(status_code=400, detail="No update fields provided")
 
-        update_payload["updated_at"] = datetime.utcnow()
+        update_payload["updated_at"] = now()
 
         updated_thread = await threads_collection.find_one_and_update(
             {"_id": ObjectId(thread_id)},
@@ -172,7 +173,7 @@ class ChatService:
             "_id": ObjectId(),
             "role": "user",
             "content": message_data.content,
-            "created_at": datetime.utcnow(),
+            "created_at": now(),
         }
 
         # 更新线程
@@ -180,18 +181,14 @@ class ChatService:
             {"_id": ObjectId(thread_id)},
             {
                 "$push": {"messages": user_message},
-                "$set": {"updated_at": datetime.utcnow()},
+                "$set": {"updated_at": now()},
             },
         )
         logger.debug("Added user message to thread %s", thread_id)
 
         # 如果是第一条消息，更新标题
         if len(thread.get("messages", [])) == 0:
-            title = (
-                message_data.content[:50] + "..."
-                if len(message_data.content) > 50
-                else message_data.content
-            )
+            title = message_data.content[:50] + "..." if len(message_data.content) > 50 else message_data.content
             await threads_collection.update_one(
                 {"_id": ObjectId(thread_id)},
                 {"$set": {"title": title}},
@@ -226,39 +223,43 @@ class ChatService:
             raise HTTPException(status_code=404, detail="Thread not found")
 
         # 格式化消息历史
-        messages_history = [
-            {"role": msg["role"], "content": msg["content"]}
-            for msg in thread.get("messages", [])
-        ]
+        messages_history = [{"role": msg["role"], "content": msg["content"]} for msg in thread.get("messages", [])]
 
         # 转换为 LangChain 消息格式
         langchain_messages = llm_service.format_messages(messages_history)
 
         # 流式生成响应
         logger.debug("Start streaming response for thread %s", thread_id)
-        full_response = ""
-        async for chunk in llm_service.chat_stream(langchain_messages):
-            full_response += chunk
-            yield chunk
-
-        # 保存 AI 响应到数据库
-        if full_response:
-            assistant_message = {
-                "_id": ObjectId(),
-                "role": "assistant",
-                "content": full_response,
-                "created_at": datetime.utcnow(),
-            }
-
-            await threads_collection.update_one(
-                {"_id": ObjectId(thread_id)},
+        message_sub_docs = []
+        async for message in llm_service.agent_stream(langchain_messages):
+            yield str(message.content)
+            role = None
+            if isinstance(message, AIMessage):
+                role = "assistant"
+            elif isinstance(message, ToolMessage):
+                role = "tool"
+            else:
+                role = "unknown"
+                logger.error("Unknown message role: %s", message)
+            message_sub_docs.append(
                 {
-                    "$push": {"messages": assistant_message},
-                    "$set": {"updated_at": datetime.utcnow()},
-                },
+                    "_id": ObjectId(),
+                    "role": role,
+                    "content": message.content,
+                    "created_at": now(),
+                }
             )
-            logger.debug("Saved assistant response for thread %s", thread_id)
+
+            # 保存 AI 响应到数据库
+
+        await threads_collection.update_one(
+            {"_id": ObjectId(thread_id)},
+            {
+                "$push": {"messages": {"$each": message_sub_docs}},
+                "$set": {"updated_at": now()},
+            },
+        )
+        logger.debug("Saved assistant response for thread %s", thread_id)
 
 
 chat_service = ChatService()
-

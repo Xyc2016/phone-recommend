@@ -40,4 +40,3 @@ async def delete_thread(thread_id: str):
     if not success:
         raise HTTPException(status_code=404, detail="Thread not found")
     return None
-

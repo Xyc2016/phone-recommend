@@ -17,13 +17,13 @@ router = APIRouter(prefix="/api/threads/{thread_id}/messages", tags=["messages"]
 async def send_message(thread_id: str, message_data: MessageCreate):
     """
     发送消息并获取 AI 响应（SSE 流式响应）
-    
+
     首先添加用户消息，然后流式返回 AI 响应
     """
     logger.info("Received message for thread %s", thread_id)
     # 添加用户消息
     await chat_service.add_message(thread_id, message_data)
-    
+
     # 生成流式响应
     async def generate_sse() -> AsyncIterator[str]:
         """生成 SSE 格式的流式响应"""
@@ -42,7 +42,7 @@ async def send_message(thread_id: str, message_data: MessageCreate):
             logger.exception("SSE streaming error for thread %s", thread_id)
             error_data = json.dumps({"error": str(e)}, ensure_ascii=False)
             yield f"data: {error_data}\n\n"
-    
+
     return StreamingResponse(
         generate_sse(),
         media_type="text/event-stream",
@@ -61,4 +61,3 @@ async def get_messages(thread_id: str):
     if not thread:
         raise HTTPException(status_code=404, detail="Thread not found")
     return thread.messages
-

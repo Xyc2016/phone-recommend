@@ -23,12 +23,12 @@ class Settings(BaseSettings):
     log_level: str = "DEBUG"
 
     # CORS 配置
-    cors_origins: List[str] = ['*']
+    cors_origins: List[str] = ["*"]
 
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "allow"
 
 
 settings = Settings()  # type: ignore[call-arg]
-

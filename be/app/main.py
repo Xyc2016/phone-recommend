@@ -7,6 +7,8 @@ from app.config import settings
 from app.database import connect_to_mongo, close_mongo_connection
 from app.api import threads, messages
 from app.logging_config import setup_logging
+from app.services.llm_service import llm_service
+from app.tools import search_phones
 
 setup_logging()
 logger = logging.getLogger("app.main")
@@ -33,8 +35,12 @@ app.include_router(messages.router)
 
 @app.on_event("startup")
 async def startup_event():
-    """应用启动时连接数据库"""
+    """应用启动时连接数据库并初始化工具"""
     await connect_to_mongo()
+
+    # 绑定工具到 LLM 服务
+    llm_service.bind_tools([search_phones])
+    logger.info("AI tools initialized successfully")
 
 
 @app.on_event("shutdown")
@@ -57,4 +63,3 @@ async def root():
 async def health():
     """健康检查"""
     return {"status": "healthy"}
-
