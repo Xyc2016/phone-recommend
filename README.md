@@ -1,6 +1,6 @@
 # 手机推荐 AI Agent
 
-一个基于AI的手机推荐助手，帮助用户找到最适合的手机。
+一个基于AI的手机推荐助手，帮助用户找到最适合的手机。这个项目使用 Cursor 进行开发，用于练习 Cursor 和开发 AI Agent 
 
 ## 项目结构
 
@@ -11,10 +11,12 @@ phone-recommend/
 │   ├── package.json # 前端依赖
 │   ├── .gitignore   # 前端 Git 忽略文件
 │   └── README.md    # 前端文档
-├── be/              # 后端项目 (Python + asyncio + MongoDB + LangChain) [待开发]
-│   ├── .gitignore   # 后端 Git 忽略文件
-│   └── ...
-└── README.md       # 项目总文档
+├── be/              # 后端项目 (FastAPI + MongoDB + LangChain)
+│   ├── app/         # FastAPI 应用与业务逻辑
+│   ├── pyproject.toml
+│   ├── .gitignore
+│   └── README.md    # 后端文档
+└── README.md        # 项目总文档
 ```
 
 ## Git 仓库说明
@@ -60,7 +62,15 @@ pnpm run dev
 
 ## 后端
 
-待开发...
+详见 [be/README.md](./be/README.md)
+
+### 快速开始（使用 uv）
+
+```bash
+cd be
+uv sync          # 安装依赖并创建虚拟环境
+uv run dev       # 启动开发服务器（等价于 uvicorn --reload）
+```
 
 ## 技术栈
 
@@ -72,11 +82,13 @@ pnpm run dev
 - Tailwind CSS
 - SASS
 
-### 后端 (计划)
-- Python
-- asyncio
-- MongoDB
-- LangChain
+### 后端
+- Python 3.11
+- FastAPI
+- MongoDB + Motor
+- LangChain + OpenAI Chat
+- Server-Sent Events (SSE)
+- uv 包管理
 
 ## 开发规范
 
