@@ -61,6 +61,22 @@ class PhoneService:
             if tags:
                 query["tags"] = {"$all": tags}
 
+        display_constraints: Dict[str, float] = {}
+        if params.min_display_size is not None:
+            display_constraints["$gte"] = params.min_display_size
+        if params.max_display_size is not None:
+            display_constraints["$lte"] = params.max_display_size
+        if display_constraints:
+            query["display_size"] = display_constraints
+
+        battery_constraints: Dict[str, int] = {}
+        if params.min_battery is not None:
+            battery_constraints["$gte"] = params.min_battery
+        if params.max_battery is not None:
+            battery_constraints["$lte"] = params.max_battery
+        if battery_constraints:
+            query["battery"] = battery_constraints
+
         sku_match: Dict[str, Any] = {}
         price_constraints: Dict[str, float] = {}
         if params.min_price is not None:
@@ -79,7 +95,6 @@ class PhoneService:
             query["skus"] = {"$elemMatch": sku_match}
 
         return query
-
 
 
 phone_service = PhoneService()

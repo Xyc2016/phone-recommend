@@ -21,6 +21,10 @@ async def search_phones(
     max_price: Optional[float] = None,
     ram: Optional[str] = None,
     storage: Optional[str] = None,
+    min_display_size: Optional[float] = None,
+    max_display_size: Optional[float] = None,
+    min_battery: Optional[int] = None,
+    max_battery: Optional[int] = None,
     limit: int = 5,
 ) -> list[Phone]:
     """
@@ -32,6 +36,8 @@ async def search_phones(
     - 标签：如旗舰机、游戏手机、拍照手机等
     - 价格区间：最低价格到最高价格
     - 硬件配置：运行内存、存储容量
+    - 屏幕尺寸：最小与最大屏幕尺寸（英寸）
+    - 电池容量：最小与最大电池容量（mAh）
 
     Args:
         keyword: 关键词搜索
@@ -57,12 +63,17 @@ async def search_phones(
             max_price=max_price,
             ram=ram,
             storage=storage,
+            min_display_size=min_display_size,
+            max_display_size=max_display_size,
+            min_battery=min_battery,
+            max_battery=max_battery,
             limit=limit,
         )
 
         logger.info(
             "Searching phones with params: keyword=%s, brand=%s, tags=%s, "
-            "min_price=%s, max_price=%s, ram=%s, storage=%s, limit=%s",
+            "min_price=%s, max_price=%s, ram=%s, storage=%s, "
+            "min_display_size=%s, max_display_size=%s, min_battery=%s, max_battery=%s, limit=%s",
             keyword,
             brand,
             tags,
@@ -70,6 +81,10 @@ async def search_phones(
             max_price,
             ram,
             storage,
+            min_display_size,
+            max_display_size,
+            min_battery,
+            max_battery,
             limit,
         )
 

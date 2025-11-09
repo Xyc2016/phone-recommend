@@ -1,7 +1,7 @@
 from typing import Annotated, Any, TypeVar
 
 from bson import ObjectId
-from pydantic import BaseModel, ConfigDict, Field, WithJsonSchema
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, WithJsonSchema
 
 
 class BasicModel(BaseModel):
@@ -25,4 +25,5 @@ class MongoModel(BasicModel):
     id: Annotated[
         ObjectId,
         WithJsonSchema({"type": "string"}),
+        PlainSerializer(str, when_used="json"),
     ] = Field(alias="_id", default_factory=ObjectId)

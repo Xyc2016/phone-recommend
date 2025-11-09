@@ -2,15 +2,17 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Literal
 
+from app.models.base import MongoModel
 
-class Message(BaseModel):
+
+class Message(MongoModel):
     """消息模型"""
 
-    id: str
     thread_id: str
-    role: Literal["user", "assistant", "tool"]
+    role: Literal["user", "assistant", "tool", "unknown"]
     content: str
     created_at: datetime
+    tool_call_id: str | None = None
 
     class Config:
         from_attributes = True

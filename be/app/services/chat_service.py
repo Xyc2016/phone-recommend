@@ -11,7 +11,7 @@ from app.models.message import Message, MessageCreate
 from app.models.thread import Thread, ThreadCreate, ThreadUpdate
 from app.services.llm_service import llm_service
 from app.utils.datetime import now
-
+from rich import print
 logger = logging.getLogger("app.chat_service")
 
 
@@ -53,9 +53,10 @@ class ChatService:
             logger.warning("Thread %s not found", thread_id)
             return None
 
+        print(thread_doc)
         messages = [
             Message(
-                id=str(msg.get("_id", "")),
+                id=msg["_id"],
                 thread_id=thread_id,
                 role=msg["role"],
                 content=msg["content"],
@@ -196,7 +197,7 @@ class ChatService:
             logger.debug("Updated title for thread %s", thread_id)
 
         return Message(
-            id=str(user_message["_id"]),
+            id=user_message["_id"],
             thread_id=thread_id,
             role="user",
             content=user_message["content"],
@@ -241,17 +242,18 @@ class ChatService:
             else:
                 role = "unknown"
                 logger.error("Unknown message role: %s", message)
-            message_sub_docs.append(
-                {
-                    "_id": ObjectId(),
-                    "role": role,
-                    "content": message.content,
-                    "created_at": now(),
-                }
+            message_sub = Message(
+                thread_id=thread_id,
+                role=role,
+                content=str(message.content),
+                created_at=now(),
+                tool_call_id=message.tool_call_id if isinstance(message, ToolMessage) else None,
             )
+            message_sub_docs.append(message_sub.py())
 
             # 保存 AI 响应到数据库
 
+        print(message_sub_docs)
         await threads_collection.update_one(
             {"_id": ObjectId(thread_id)},
             {

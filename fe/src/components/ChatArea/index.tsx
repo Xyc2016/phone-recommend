@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Empty, Input, Button, message as antdMessage } from 'antd';
 import { SendOutlined, AudioOutlined, MobileOutlined } from '@ant-design/icons';
 import { Thread, Message } from '../../types';
@@ -20,9 +20,54 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ thread, onMessageSent, onThr
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  const displayMessages = useMemo(() => {
+    const mergeContent = (prev: string, next: string) => {
+      if (!prev) return next;
+      if (!next) return prev;
+      return `${prev}\n\n${next}`;
+    };
+
+    const merged: Message[] = [];
+    const sourceMessages: Message[] = [...(thread?.messages ?? [])];
+
+    if (streamingMessage) {
+      sourceMessages.push(streamingMessage);
+    }
+
+    for (const msg of sourceMessages) {
+      if (msg.role === 'tool') {
+        continue;
+      }
+
+      const normalized: Message = {
+        ...msg,
+        role: msg.role === 'user' ? 'user' : 'assistant',
+      };
+
+      if (normalized.role === 'assistant') {
+        const lastIndex = merged.length - 1;
+        const last = merged[lastIndex];
+
+        if (last && last.role === 'assistant') {
+          merged[lastIndex] = {
+            ...last,
+            content: mergeContent(last.content, normalized.content),
+            timestamp: Math.max(last.timestamp, normalized.timestamp),
+          };
+        } else {
+          merged.push({ ...normalized });
+        }
+      } else {
+        merged.push({ ...normalized });
+      }
+    }
+
+    return merged;
+  }, [thread?.messages, streamingMessage]);
+
   useEffect(() => {
     scrollToBottom();
-  }, [thread?.messages, streamingMessage]);
+  }, [displayMessages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -162,12 +207,9 @@ export const ChatArea: React.FC<ChatAreaProps> = ({ thread, onMessageSent, onThr
         className="flex-1 overflow-y-auto p-4 space-y-4"
         style={{ scrollBehavior: 'smooth' }}
       >
-        {thread.messages.map((message) => (
+        {displayMessages.map((message) => (
           <ChatItem key={message.id} message={message} />
         ))}
-        {streamingMessage && (
-          <ChatItem key={streamingMessage.id} message={streamingMessage} />
-        )}
         <div ref={messagesEndRef} />
       </div>
 

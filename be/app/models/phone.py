@@ -46,8 +46,21 @@ class Phone(MongoModel):
     description: Optional[str] = Field(None, description="型号简介或卖点")
     os: Optional[str] = Field(None, max_length=100, description="操作系统或界面")
     chipset: Optional[str] = Field(None, max_length=150, description="SoC/芯片型号")
-    display: Optional[str] = Field(None, max_length=200, description="屏幕相关信息")
-    battery: Optional[str] = Field(None, max_length=200, description="电池及充电信息")
+    display_size: Optional[float] = Field(
+        None,
+        ge=0,
+        description="屏幕尺寸（英寸）",
+    )
+    display_freq: Optional[int] = Field(
+        None,
+        ge=0,
+        description="屏幕刷新率（Hz）",
+    )
+    battery: Optional[int] = Field(
+        None,
+        ge=0,
+        description="电池容量（mAh）",
+    )
     camera: Optional[str] = Field(None, max_length=200, description="摄像头信息")
     tags: List[str] = Field(default_factory=list, description="标签列表，用于检索")
     features: List[str] = Field(default_factory=list, description="特色功能列表")
@@ -70,6 +83,10 @@ class PhoneSearchParams(BaseModel):
     max_price: Optional[float] = Field(None, ge=0, description="最高价格")
     ram: Optional[str] = Field(None, description="期望的运行内存配置")
     storage: Optional[str] = Field(None, description="期望的存储配置")
+    min_display_size: Optional[float] = Field(None, ge=0, description="最小屏幕尺寸（英寸）")
+    max_display_size: Optional[float] = Field(None, ge=0, description="最大屏幕尺寸（英寸）")
+    min_battery: Optional[int] = Field(None, ge=0, description="最小电池容量（mAh）")
+    max_battery: Optional[int] = Field(None, ge=0, description="最大电池容量（mAh）")
     limit: int = Field(
         5,
         ge=1,
